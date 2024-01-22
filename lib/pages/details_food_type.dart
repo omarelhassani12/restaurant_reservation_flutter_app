@@ -14,23 +14,160 @@ class FoodItem {
   final String title;
   final String subtitle;
   final String price;
+  int itemCount;
+  bool showMinusIcon;
 
   FoodItem({
     required this.imagePath,
     required this.title,
     required this.subtitle,
     required this.price,
+    this.itemCount = 0,
+    this.showMinusIcon = false,
   });
+}
+
+class FoodCard extends StatelessWidget {
+  final FoodItem foodItem;
+  final VoidCallback onMinusPressed;
+  final VoidCallback onPlusPressed;
+
+  FoodCard({
+    required this.foodItem,
+    required this.onMinusPressed,
+    required this.onPlusPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.black,
+      child: SizedBox(
+        height: 170,
+        child: Stack(
+          children: [
+            Card(
+              color: const Color.fromARGB(
+                255,
+                60,
+                60,
+                60,
+              ),
+              elevation: 3.0,
+              child: SizedBox(
+                width: 300,
+                height: 140,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          height: 120,
+                          child: Image.asset(foodItem.imagePath,
+                              fit: BoxFit.cover),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                foodItem.title,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                foodItem.subtitle,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                foodItem.price,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 120,
+              right: (foodItem.itemCount > 0) ? 10 : 40,
+              child: Container(
+                height: 40,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey,
+                ),
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      // Handle tap
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (foodItem.itemCount > 0)
+                          IconButton(
+                            icon: const Icon(
+                              Icons.remove,
+                              color: Colors.white,
+                            ),
+                            onPressed: onMinusPressed,
+                          ),
+                        if (foodItem.itemCount > 0)
+                          Text(
+                            foodItem.itemCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.add,
+                            color: Colors.white,
+                          ),
+                          onPressed: onPlusPressed,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   late String selectedFoodType;
   late List<FoodItem> foodItems;
+  List<FoodItem> selectedItems = [];
 
   @override
   void initState() {
     super.initState();
-    selectedFoodType = 'Pate Meal'; // Set the initial selected food type
+    selectedFoodType = 'Pate Meal';
     foodItems = _getFoodItems(selectedFoodType);
   }
 
@@ -60,7 +197,6 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
           ],
         ),
         actions: <Widget>[
-          // Add a search icon
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
@@ -71,7 +207,6 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
       ),
       body: Column(
         children: [
-          // Horizontal scrolling buttons
           SizedBox(
             height: 50,
             child: ListView(
@@ -81,34 +216,59 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                 _buildButton('Rice Bowl'),
                 _buildButton('Salad'),
                 _buildButton('Pasta'),
-                // Add more buttons as needed
               ],
             ),
           ),
-          // Content for each button
           Expanded(
             child: ListView(
               scrollDirection: Axis.vertical,
               padding: const EdgeInsets.all(16.0),
               children: foodItems
-                  .map((foodItem) => _buildContent(
-                        foodItem.imagePath,
-                        foodItem.title,
-                        foodItem.subtitle,
-                        foodItem.price,
+                  .map((foodItem) => FoodCard(
+                        foodItem: foodItem,
+                        onMinusPressed: () {
+                          setState(() {
+                            if (foodItem.itemCount > 0) {
+                              foodItem.itemCount--;
+                              if (foodItem.itemCount == 0) {
+                                foodItem.showMinusIcon = false;
+                                selectedItems.remove(foodItem);
+                              }
+                            }
+                          });
+                        },
+                        onPlusPressed: () {
+                          setState(() {
+                            foodItem.itemCount++;
+                            foodItem.showMinusIcon = true;
+                            if (!selectedItems.contains(foodItem)) {
+                              selectedItems.add(foodItem);
+                            }
+                          });
+                        },
                       ))
                   .toList(),
             ),
           ),
         ],
       ),
+      floatingActionButton: selectedItems.isNotEmpty
+          ? FloatingActionButton(
+              onPressed: () {
+                _showSelectedItems(context);
+              },
+              backgroundColor: Colors.red,
+              child: const Icon(
+                  Icons.shopping_cart), // Set the background color to red
+            )
+          : null,
     );
   }
 
   Widget _buildButton(String text) {
     bool isSelected = selectedFoodType == text;
     return Container(
-      width: 100, // Set the width for each button
+      width: 100,
       margin: const EdgeInsets.symmetric(horizontal: 5.0),
       child: TextButton(
         onPressed: () {
@@ -124,100 +284,6 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
             fontSize: isSelected ? 16.0 : 14.0,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContent(
-      String imagePath, String title, String subtitle, String price) {
-    return Card(
-      color: Colors.black,
-      child: SizedBox(
-        height: 170,
-        child: Stack(
-          children: [
-            Card(
-              color: const Color.fromARGB(
-                255,
-                60,
-                60,
-                60,
-              ), // Use grey color for the card
-              elevation: 3.0,
-              child: SizedBox(
-                width: 300,
-                height: 140,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 120, // Set the width for the image
-                          height: 120, // Set the height for the image
-                          child: Image.asset(imagePath, fit: BoxFit.cover),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Text(
-                                subtitle,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              Text(
-                                price,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              top: 120,
-              right: 25,
-              child: Container(
-                height: 40,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey,
-                ),
-                child: Center(
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.add,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      // Handle button press
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -288,5 +354,64 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
       default:
         return [];
     }
+  }
+
+  void _removeItem(FoodItem foodItem) {
+    setState(() {
+      foodItem.itemCount = 0;
+      foodItem.showMinusIcon = false;
+      selectedItems.remove(foodItem);
+    });
+  }
+
+  void _showSelectedItems(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          color: Colors.black,
+          child: ListView.builder(
+            itemCount: selectedItems.length * 2 -
+                1, // Double the items count to account for dividers
+            itemBuilder: (BuildContext context, int index) {
+              if (index.isOdd) {
+                return const Divider(
+                  color: Colors.grey,
+                  height: 1,
+                );
+              }
+
+              final itemIndex = index ~/ 2;
+              final foodItem = selectedItems[itemIndex];
+
+              return ListTile(
+                title: Row(
+                  children: [
+                    Text(
+                      '${foodItem.title} X ${foodItem.itemCount}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle),
+                      color: Colors.red,
+                      onPressed: () {
+                        _removeItem(foodItem);
+                        Navigator.of(context)
+                            .pop(); // Close the bottom sheet after removing the item
+                      },
+                    ),
+                  ],
+                ),
+                subtitle: Text(
+                  'Price: \$${(foodItem.itemCount * double.parse(foodItem.price.replaceAll('\$', ''))).toStringAsFixed(2)}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 }
