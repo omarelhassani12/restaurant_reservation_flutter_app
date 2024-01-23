@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'pages/home_screen.dart';
 
-void main() {
+import 'package:flame/flame.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Flame.images.loadAll(['table.png', 'chair.png']);
   runApp(const MyApp());
 }
 

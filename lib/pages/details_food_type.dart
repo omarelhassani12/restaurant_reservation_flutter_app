@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'reserving_screen.dart';
+
 class FoodDetailsScreen extends StatefulWidget {
   final String foodType;
 
@@ -107,18 +109,21 @@ class FoodCard extends StatelessWidget {
             ),
             Positioned(
               top: 120,
-              right: (foodItem.itemCount > 0) ? 10 : 40,
+              right: (foodItem.itemCount > 0) ? 30 : 40,
               child: Container(
                 height: 40,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
+                decoration: BoxDecoration(
+                  shape: (foodItem.itemCount > 0)
+                      ? BoxShape.rectangle
+                      : BoxShape.circle,
                   color: Colors.grey,
+                  borderRadius: (foodItem.itemCount > 0)
+                      ? BorderRadius.circular(20.0)
+                      : null,
                 ),
                 child: Center(
                   child: GestureDetector(
-                    onTap: () {
-                      // Handle tap
-                    },
+                    onTap: () {},
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -259,7 +264,9 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
               },
               backgroundColor: Colors.red,
               child: const Icon(
-                  Icons.shopping_cart), // Set the background color to red
+                Icons.shopping_cart,
+                color: Colors.white,
+              ),
             )
           : null,
     );
@@ -269,7 +276,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
     bool isSelected = selectedFoodType == text;
     return Container(
       width: 100,
-      margin: const EdgeInsets.symmetric(horizontal: 5.0),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
       child: TextButton(
         onPressed: () {
           setState(() {
@@ -370,46 +377,71 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
       builder: (BuildContext context) {
         return Container(
           color: Colors.black,
-          child: ListView.builder(
-            itemCount: selectedItems.length * 2 -
-                1, // Double the items count to account for dividers
-            itemBuilder: (BuildContext context, int index) {
-              if (index.isOdd) {
-                return const Divider(
-                  color: Colors.grey,
-                  height: 1,
-                );
-              }
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: selectedItems.length * 2 - 1,
+                  itemBuilder: (BuildContext context, int index) {
+                    if (index.isOdd) {
+                      return const Divider(
+                        color: Colors.grey,
+                        height: 1,
+                      );
+                    }
 
-              final itemIndex = index ~/ 2;
-              final foodItem = selectedItems[itemIndex];
+                    final itemIndex = index ~/ 2;
+                    final foodItem = selectedItems[itemIndex];
 
-              return ListTile(
-                title: Row(
-                  children: [
-                    Text(
-                      '${foodItem.title} X ${foodItem.itemCount}',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle),
-                      color: Colors.red,
-                      onPressed: () {
-                        _removeItem(foodItem);
-                        Navigator.of(context)
-                            .pop(); // Close the bottom sheet after removing the item
-                      },
-                    ),
-                  ],
+                    return ListTile(
+                      title: Row(
+                        children: [
+                          Text(
+                            '${foodItem.title} X ${foodItem.itemCount}',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle),
+                            color: Colors.red,
+                            onPressed: () {
+                              _removeItem(foodItem);
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      ),
+                      subtitle: Text(
+                        'Price: \$${(foodItem.itemCount * double.parse(foodItem.price.replaceAll('\$', ''))).toStringAsFixed(2)}',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    );
+                  },
                 ),
-                subtitle: Text(
-                  'Price: \$${(foodItem.itemCount * double.parse(foodItem.price.replaceAll('\$', ''))).toStringAsFixed(2)}',
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              );
-            },
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // Navigate to the next page
+                  Navigator.of(context).push(_createPageRoute(selectedItems));
+                },
+                child: const Text('Confirm order'),
+              ),
+            ],
           ),
+        );
+      },
+    );
+  }
+
+  PageRouteBuilder<void> _createPageRoute(List<FoodItem> selectedItems) {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            return ReservePlace(selectedItems: selectedItems);
+          },
         );
       },
     );

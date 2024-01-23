@@ -11,6 +11,7 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
